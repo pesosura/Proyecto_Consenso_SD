@@ -206,6 +206,7 @@ class Monitor:
                 self.votos_negativos = {}
                 self.consenso_event.clear()
 
+            tiempo_inicio = time.time()
             self.enviar_bloque_a_validadores(bloque)
 
             print(f"[MONITOR] Esperando votos para bloque ID-{bloque.get('id')}...")
@@ -213,14 +214,18 @@ class Monitor:
             consenso = self.consenso_event.wait(timeout=30)
 
             if consenso:
+                tiempo_fin = time.time()
+                tiempo_consenso = tiempo_fin - tiempo_inicio
                 with self.lock:
                     self.ledger.append({
                         "bloque": self.bloque_actual,
                         "votos_positivos": self.votos_positivos.copy(),
-                        "votos_negativos": self.votos_negativos.copy()
+                        "votos_negativos": self.votos_negativos.copy(),
+                        "tiempo_consenso": tiempo_consenso
                     })
 
                 print(f"[MONITOR] Bloque ID-{bloque.get('id')} insertado en el Ledger local.")
+                print(f"[METRICA] Tiempo de consenso para bloque ID-{bloque.get('id')}: {tiempo_consenso:.4f} segundos.")
 
                 mensaje_consenso = f"/broadcast CONSENSO_ALCANZADO Bloque ID-{bloque.get('id')}"
                 self.enviar_mensaje(mensaje_consenso)
